@@ -194,9 +194,109 @@ def dijkstra(df, source, target, G):
     return [final_weight, short_path]
 
 # functionality 2
+def in_degree(df_g, node):
+    # number of edges where node is target
+    return df_g[df_g['target']==node].target.count()
+
+def out_degree(df_g, node):
+    # number of edges where node is source
+    return df_g[df_g['source']==node].source.count()
+
+
+def PageRank(G, a=0.15, max_iter=100, epsilon=1e-6):
+    '''
+    input:
+    G = graph
+    a = probability of teleporting
+
+    output:
+    pi = pagerank score of nodes
+    '''
+    nodes_list = list(G.nodes)
+    n = len(G.nodes)
+    pi = {v:1 for v in nodes_list}
+
+    # build adjacency matrix A
+    A = np.zeros((n,n))
+    for node in G.nodes:
+        i = nodes_list.index(node)
+        for neighbor in G.successors(node):
+            j = nodes_list.index(neighbor)
+            A[i][j] = 1/len(list(G.successors(node)))
+
+    #adding an edge to each node for those nodes whose out-degree = 0 and normalize
+    for i in range(n):
+        if np.sum(A[i])==0:
+            A[i] = (1/n)*np.ones((1, n))
+
+            # build P matrix
+    P = (a/n)*np.ones((n,n))+(1-a)*A
+
+    # probability vector initialization
+    q = np.zeros((1,n))
+    q[0][0] = 1
+
+    for i in range(max_iter):
+        q_new = np.dot(q,P) # q(t+1) = q(t)*P
+
+        if epsilon:
+            if np.sum(np.abs(q-q_new)) < epsilon:
+                break
+
+        q = q_new
+
+    for node in nodes_list:
+        pi[node] = q[0][nodes_list.index(node)]
+
+    return pi
+
+
 
 
 # functionality 3
+def fun3(G, inter, order_node, start, end):
+    '''
+    We consider that the list of node that must be visit in order is chosen by the user.
+
+    input:
+    G=graph
+    inter= interval of time for the subgraph
+    order_node= list of node that must be visit in order
+    start,end= first and last node to visit
+
+    Return: List of shortest walk that goes from user p_j to p_n, and that visits in order the nodes in p.
+    '''
+    new_G=interval_time(G,inter)
+    nodes_list = list(new_G.nodes)
+    dfg = nx.to_pandas_edgelist(new_G, nodelist=nodes_list)
+
+    path=[]
+    if start not in nodes_list:
+        return "Oops!  That was no valid numbers.  Try again..."
+    if end not in nodes_list:
+        return "Oops!  That was no valid numbers.  Try again..."
+    for j in range(len(order_node)):
+        if(order_node[j] not in nodes_list):
+            return "Oops!  That was no valid numbers.  Try again..."
+
+
+    for i in range(len(order_node)):
+        if i==0:
+            if dijkstra(dfg,start,order_node[i],new_G)=='No possible path':
+                return "Oops!  That was no valid numbers.  Try again..."
+            else:
+                path.append(dijkstra(dfg,start,order_node[i],new_G)[1])
+        elif i==(len(order_node)-1):
+            if dijkstra(dfg,order_node[i],end,new_G)=='No possible path':
+                return "Oops!  That was no valid numbers.  Try again..."
+            else:
+                path.append(dijkstra(dfg,order_node[i],end,new_G)[1])
+                return path
+        else:
+            if dijkstra(dfg,order_node[i],order_node[i+1],new_G)=='No possible path':
+                return "Oops!  That was no valid numbers.  Try again..."
+            else:
+                path.append(dijkstra(dfg,order_node[i],order_node[i+1],new_G)[1])
 
 
 # functionality 4
@@ -339,9 +439,61 @@ def visualization_1(G, key):
 
 
 # visualization 2
+def vis2(node,G):
+
+    lista=[node]
+
+    for i in range(len(list(G.neighbors(node)))):
+        lista.append(list(G.neighbors(node))[i])
+
+    g = nx.DiGraph()
+    for i in range(len(lista)):
+        g.add_node(lista[i])
+        g.add_edge(node,lista[i])
+        if(i>75):
+            break
+
+    if(len(lista)>75):
+        print("The node",node ,"has",len(lista)-1,"adjacent, we print only the first 75")
+    else:
+        print("The node",node ,"has",len(lista)-1,"adjacent")
+
+
+    plt.figure()
+    nx.draw(g,with_labels = True, node_color="blue")
+    plt.show()
 
 
 # visualization 3
+def vis3(G, inter, order_node, start, end):
+
+    '''
+    input:
+    G=graph
+    inter= interval of time for the subgraph
+    order_node= list of node that must be visit in order
+    start,end= first and last node to visit
+
+    Return: visualization of functionality 3
+    '''
+
+    a=fun3(G, inter, order_node, start, end)
+    nod=[]
+    for i in range(len(a)):
+        for j in range(len(a[i])):
+            nod.append(a[i][j])
+
+    print("The shortest walk that goes from user",a[0][0]," to user",a[-1][-1] ,"is", nod)
+    for i in range(len(a)):
+        print("In particular from ", a[i][0], "to", a[i][-1], "is", a[i])
+
+    new_G=interval_time(G,inter)
+    k = new_G.subgraph(nod)
+    pos = nx.spring_layout(k)
+
+    plt.figure()
+    nx.draw(k, pos=pos,with_labels = True, node_color="blue")
+    plt.show()
 
 
 # visualization 4
