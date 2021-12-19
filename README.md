@@ -9,7 +9,7 @@ In this github repository we stored the files written for the fifth Homework of 
 * Alice Palmucci
 
 ### File and Scripts descriptions
-1. __[`main.ipynb`](https://nbviewer.org/github/Andreagiordano99/ADM-HW5/blob/main/main.ipynb)__:
+1. __[`main.ipynb`](https://nbviewer.org/github/Andreagiordano99/ADM-HW5/blob/main/main.ipynb?flush_cache=true)__:
    > this is the notebook which contains the executed parts of the points below of the homework:
 
          1. Data
@@ -27,7 +27,7 @@ In this github repository we stored the files written for the fifth Homework of 
 
          3. Algorithmic question
 
-2. __[`Functionality 2.ipynb`](https://nbviewer.org/github/Andreagiordano99/ADM-HW5/blob/main/Functionality%202.ipynb)__:
+2. __[`Functionality 2.ipynb`](https://nbviewer.org/github/Andreagiordano99/ADM-HW5/blob/main/Functionality%202.ipynb?flush_cache=true)__:
    > this notebook contains the executed part of Functionality 2
          
          2. Implementation of the backend
