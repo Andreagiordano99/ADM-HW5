@@ -21,7 +21,7 @@ In this github repository we stored the files written for the fifth Homework of 
 
          3. Implementation of the frontend
             3.1 Visualization 1 - Visualize the overall features of the graph
-            3.2 Visualization 2  - Visualize the best user!
+            3.2 Visualization 2 - Visualize the best user!
             3.3 Visualization 3 - Visualize the Shortest Ordered Route
             3.4 Visualization 4 - Visualize disconnecting graphs
 
