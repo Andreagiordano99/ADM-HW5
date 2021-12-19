@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from collections import Counter
 from tabulate import tabulate
 import numpy as np
+import math
 
 
 def date_parser(date):
@@ -140,9 +141,138 @@ def interval_time(G, time_inter):
             new_G.add_edge(u, v, weight=w)
     return new_G
 
+
+def dijkstra(df, source, target, G):
+    '''
+    :param df: dataframe of the graph: source, target, weight
+    :param source: source node
+    :param target: target node
+    :return: final_weight, path
+    '''
+    # init the distance dictionary with the source node as key and as value None (parent node) and 0 (distance)
+    distance_par = {source: (None, 0)}
+    visited = set()
+    # store the current node
+    curr_node = source
+
+    while curr_node != target:
+        visited.add(curr_node)
+        dest_list = df[df['source']==curr_node].target.to_list()
+        # taking only the weight of curr_node
+        curr_weight = distance_par[curr_node][1]
+        for node in dest_list:
+            weight = G[curr_node][node]['weight'] + curr_weight
+            if node not in distance_par:
+                distance_par[node] = (curr_node, weight)
+            else:
+                node_weight = distance_par[node][1]
+                if node_weight > weight:
+                    distance_par[node] = (curr_node, weight)
+
+        # create a list of nodes to visit
+        next_dest_list = {n: distance_par[n] for n in distance_par if n not in visited}
+
+        # check if there are nodes to visit
+        if not next_dest_list:
+            return 'No possible path'
+
+        # next curr node is the one in next_dest_list (nodes still to visit) with the lowest weight
+        curr_node = min(next_dest_list, key=lambda k: next_dest_list[k][1])
+
+    # now we wont to compute the list of the shortest path from source to target
+    short_path = []
+    # at the beginning, curr_node is the target node, since the first while is finished
+    final_weight = distance_par[curr_node][1]
+    while curr_node is not None:
+        short_path.append(curr_node)
+        par_node = distance_par[curr_node][0]
+        curr_node = par_node
+
+    # reverse the list now
+    short_path = short_path[::-1]
+
+    return [final_weight, short_path]
+
 # functionality 2
+
+
 # functionality 3
+
+
 # functionality 4
+def functionality_4(G, time1, time2, u1, u2):
+    '''
+    :param G: directed graph
+    :param time1: first interval
+    :param time2: second interval
+    :param u1: unique user of time1
+    :param u2: unique user of time2
+    :return: minimum links to cut, weight and set of edges cutted
+    '''
+    # creating G1 and G2
+    G1 = interval_time(G, time1)
+    G2 = interval_time(G, time2)
+
+    for u, v, weight in G1.edges(data='weight'):
+        G1[u][v]['weight'] = round(1/weight, 2)
+    for u, v, weight in G2.edges(data='weight'):
+        G2[u][v]['weight'] = round(1/weight, 2)
+
+    G12 = nx.DiGraph()
+    list_g1 = list(G1.edges(data='weight'))
+    list_g2 = list(G2.edges(data='weight'))
+    for edge1 in list_g1:
+        G12.add_edge(edge1[0], edge1[1], weight=edge1[2])
+    for edge2 in list_g2:
+        if G12.has_edge(edge2[0], edge2[1]):
+            G12[edge2[0]][edge2[1]]['weight'] += edge2[2]
+        else:
+            G12.add_edge(edge2[0], edge2[1], weight=edge2[2])
+
+    list_g12 = list(G12.edges(data='weight'))
+
+    for edge12 in list_g12:
+        if G1.has_edge(edge12[0], edge12[1]):
+            G1[edge12[0]][edge12[1]]['weight'] = edge12[2]
+        if G2.has_edge(edge12[0], edge12[1]):
+            G2[edge12[0]][edge12[1]]['weight'] = edge12[2]
+
+    list_n12 = list(G12.nodes)
+    df_g12 = nx.to_pandas_edgelist(G12, nodelist=list_n12)
+    path = dijkstra(df_g12, u1, u2, G12)
+
+    if path == 'No possible path':
+        return 'Nodes are not connected'
+    else:
+        path = path[1]
+    weight = 0
+    num_links = 0
+    edge = (path[0], path[1])
+    all_links = set()
+
+    while path:
+        min_weight = math.inf
+        for i in range(len(path)-1):
+            if G12[path[i]][path[i+1]]['weight'] < min_weight:
+                min_weight = G12[path[i]][path[i+1]]['weight']
+                edge = (path[i], path[i+1])
+        weight += min_weight
+        num_links += 1
+        all_links.add(edge)
+        G12.remove_edge(edge[0], edge[1])
+        index_df = df_g12[(df_g12.source == edge[0]) & (df_g12.target == edge[1])].index
+        # Delete these row indexes from dataFrame
+        df_g12.drop(index_df, inplace=True)
+        path = dijkstra(df_g12, u1, u2, G12)
+        if path == 'No possible path':
+            break
+        else:
+            path = path[1]
+
+    return ['Minimum links to cut: ' + str(num_links) + '\nTotal weight: ' + str(weight), all_links]
+
+
+
 
 # 3 Implementation of the FrontEnd
 # visualization 1
@@ -163,19 +293,25 @@ def visualization_1(G, key):
     nodes_g = list(new_G.nodes)
     df_g = nx.to_pandas_edgelist(new_G, nodelist=nodes_g)
 
+    # in degree node: the edge come into the node
     in_degree = df_g.target.to_list()
     dict_in = dict.fromkeys(nodes_g, 0)
+    # count the in-degree frequency for every node
     for node in in_degree:
         dict_in[node] += 1
+    # sort ascending the in-degree frequency
     in_deg_freq = Counter(sorted(list(dict_in.values())))
     y_in1 = np.array(list(in_deg_freq.values()))
     y_in = y_in1 / sum(y_in1)
     x_in = list(in_deg_freq.keys())
 
+    # out degree node: the edge come out of the node
     out_degree = df_g.source.to_list()
     dict_out = dict.fromkeys(nodes_g, 0)
+    # count the out-degree frequency for every node
     for node in out_degree:
         dict_out[node] += 1
+    # sort ascending the out-degree frequency
     out_deg_freq = Counter(sorted(list(dict_out.values())))
     y_out1 = np.array(list(out_deg_freq.values()))
     y_out = y_out1 / sum(y_out1)
@@ -183,7 +319,7 @@ def visualization_1(G, key):
 
     plt.figure(figsize=(13, 6))
     plt.bar(x_in, y_in)
-    plt.title("In Degree distribution")
+    plt.title("In Degree distribution frequency")
     plt.xlabel("in-degree")
     plt.ylabel("Density distribution in-degree")
     plt.xlim(-1, 40)
@@ -193,10 +329,51 @@ def visualization_1(G, key):
 
     plt.figure(figsize=(13, 6))
     plt.bar(x_out, y_out)
-    plt.title("Out Degree distribution")
+    plt.title("Out Degree distribution frequency")
     plt.xlabel("out-degree")
     plt.ylabel("Density distribution out-degree")
     plt.xlim(-1, 40)
     plt.ylim(0, 0.6)
     plt.show()
     plt.close()
+
+
+# visualization 2
+
+
+# visualization 3
+
+
+# visualization 4
+def visualization_4(G, time1, time2, u1, u2):
+    list_edges = functionality_4(G, time1, time2, u1, u2)[1]
+    G_edge = nx.Graph()
+    G_edge.add_edges_from(list_edges)
+    # nx.draw(G_edge, with_labels=True)
+
+    left_nodes = []
+    right_nodes = []
+    for edge in list_edges:
+        left_nodes.append(edge[0])
+        right_nodes.append(edge[1])
+
+
+    # set the position according to column (x-coord)
+    pos = {n: (0, i) for i, n in enumerate(left_nodes)}
+    pos.update({n: (1, i + 0.5) for i, n in enumerate(right_nodes)})
+
+    options = {
+        "font_size": 10,
+        "node_size": 3000,
+        "node_color": "white",
+        "edgecolors": "black",
+        "linewidths": 5,
+        "width": 5,
+    }
+    nx.draw_networkx(G_edge, pos, **options)
+
+    # Set margins for the axes so that nodes aren't clipped
+    ax = plt.gca()
+    ax.margins(0.20)
+    plt.axis("off")
+    plt.show()
