@@ -8,6 +8,10 @@ In this github repository we stored the files written for the fifth Homework of 
 * Andrea Giordano
 * Alice Palmucci
 
+** ATTENTION **
+
+The links of the notebooks with nbviewer may not be showing the final version of them, so please be aware of this and check the versions of the notebook in the repository.
+
 ### File and Scripts descriptions
 1. __[`main.ipynb`](https://nbviewer.org/github/Andreagiordano99/ADM-HW5/blob/main/main.ipynb?flush_cache=true)__:
    > this is the notebook which contains the executed parts of the points below of the homework:
